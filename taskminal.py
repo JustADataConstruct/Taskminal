@@ -3,16 +3,16 @@ import sqlite3
 from sqlite3.dbapi2 import sqlite_version
 from sqlite3 import Error
 
-def init_new_database(force:bool = False) -> bool:
-    if os.path.isfile("taskminal.db"):
+def init_new_database(name:str = "taskminal.db",force:bool = False) -> bool:
+    if os.path.isfile(name):
         if force == False:
             print("Database already exists!")
             return False
         else:
-            os.remove("taskminal.db")
+            os.remove(name)
     conn = None
     try:
-        conn = sqlite3.connect("taskminal.db")
+        conn = sqlite3.connect(name)
         print(f"Connected: {sqlite_version}")
     except Error as e:
         print(e)
@@ -23,10 +23,10 @@ def init_new_database(force:bool = False) -> bool:
             conn.close()
         return result
 
-def connect_to_db():
+def connect_to_db(name):
     conn = None
     try:
-        conn = sqlite3.connect("taskminal.db")
+        conn = sqlite3.connect(name)
         return conn
     except Error as e:
         print(e)
@@ -38,6 +38,13 @@ def create_table(conn,sql):
         cursor.execute(sql)
     except Error as e:
         print(e)
+
+def add_task(conn,task):
+    sql = """INSERT INTO tasks(name,start_date) VALUES(?,?)"""
+    cursor = conn.cursor()
+    cursor.execute(sql,task)
+    conn.commit()
+    return cursor.lastrowid
 
 def close_connection(conn):
     if conn:
