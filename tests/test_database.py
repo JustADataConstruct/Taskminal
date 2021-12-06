@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime
 import os
 
-from taskminal import add_task, close_connection, init_new_database, connect_to_db,create_table, get_all_tasks, remove_task_by_index 
+from taskminal import * 
 
 def test_can_create_a_new_database():
     db_created = init_new_database("test.db",True)
@@ -50,14 +50,23 @@ def test_can_remove_task():
     result = get_all_tasks(conn)
     assert result == []
 
+def test_can_complete_task():
+    conn = connect_to_db("test.db")
+    now = datetime.now()
+    now = now.strftime("%m/%d/%Y, %H:%M:%S")
+    task = add_task(conn,('Test',now))
+    (id,name,completed,s_date,e_date) = toggle_task(conn,task)[0]
+    assert completed == 1
 
 def test_can_close_connection():
     conn = connect_to_db("test.db")
     conn = close_connection(conn)
     assert conn == None
 
+
+
 """
-TODO: Complete tasks, commands, subtasks?
+TODO: Commands, subtasks?
 
 """
 

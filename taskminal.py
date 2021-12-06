@@ -52,6 +52,19 @@ def remove_task_by_index(conn,index):
     cursor.execute(sql,(index,))
     conn.commit()
 
+def toggle_task(conn,id):
+    sql = """UPDATE tasks SET completed = CASE WHEN completed = 0 THEN 1 else 0 END WHERE id = ?; """
+    cursor = conn.cursor()
+    cursor.execute(sql,(id,))
+    conn.commit()
+    return get_task_by_index(conn,id)
+
+def get_task_by_index(conn,id):
+    sql = "SELECT * from tasks WHERE id=?"
+    cursor = conn.cursor()
+    cursor.execute(sql,(id,))
+    return cursor.fetchall()
+
 def get_all_tasks(conn):
     sql = "SELECT * FROM tasks"
     cursor = conn.cursor()
