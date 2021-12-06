@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime
 import os
 
-from taskminal import add_task, close_connection, init_new_database, connect_to_db,create_table
+from taskminal import add_task, close_connection, init_new_database, connect_to_db,create_table, get_all_tasks, remove_task_by_index 
 
 def test_can_create_a_new_database():
     db_created = init_new_database("test.db",True)
@@ -39,13 +39,26 @@ def test_can_add_task():
     print("RESULT:", result)
     assert result != None
 
+def test_can_get_tasks():
+    conn = connect_to_db("test.db")
+    result = get_all_tasks(conn)
+    assert result != []
+
+def test_can_remove_task():
+    conn = connect_to_db("test.db")
+    remove_task_by_index(conn,1)
+    result = get_all_tasks(conn)
+    assert result == []
+
+
 def test_can_close_connection():
     conn = connect_to_db("test.db")
     conn = close_connection(conn)
     assert conn == None
 
 """
-TODO: Check the task we just inserted, remove tasks, complete tasks, commands, subtasks?
+TODO: Complete tasks, commands, subtasks?
+
 """
 
 def teardown_module():

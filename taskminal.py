@@ -46,6 +46,18 @@ def add_task(conn,task):
     conn.commit()
     return cursor.lastrowid
 
+def remove_task_by_index(conn,index):
+    sql = "DELETE FROM tasks WHERE id=?"
+    cursor = conn.cursor()
+    cursor.execute(sql,(index,))
+    conn.commit()
+
+def get_all_tasks(conn):
+    sql = "SELECT * FROM tasks"
+    cursor = conn.cursor()
+    cursor.execute(sql)
+    return cursor.fetchall()
+
 def close_connection(conn):
     if conn:
         conn = conn.close()
