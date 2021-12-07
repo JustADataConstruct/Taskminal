@@ -22,20 +22,12 @@ def test_can_connect_to_db():
 def test_can_create_table():
     conn = connect_to_db("test.db")
     cursor = conn.cursor()
-    create_table(conn,""" CREATE TABLE IF NOT EXISTS tasks (
-                            id integer PRIMARY KEY,
-                            name text NOT NULL,
-                            completed integer DEFAULT FALSE,
-                            start_date text NOT NULL,
-                            end_date text);""")
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     assert cursor.fetchall() == [('tasks',)]
 
 def test_can_add_task():
     conn = connect_to_db("test.db")
-    now = datetime.now()
-    now = now.strftime("%m/%d/%Y, %H:%M:%S")
-    result = add_task(conn,('Test',now))
+    result = add_task(conn,'Test')
     print("RESULT:", result)
     assert result != None
 
@@ -50,11 +42,19 @@ def test_can_remove_task():
     result = get_all_tasks(conn)
     assert result == []
 
+def test_can_update_task():
+    conn = connect_to_db("test.db")
+    id = add_task(conn,"UPDATE")
+    update_task(conn,id)
+    (*_,e_date) = get_task_by_index(conn,id)[0]
+    assert e_date != None
+
+
 def test_can_complete_task():
     conn = connect_to_db("test.db")
     now = datetime.now()
     now = now.strftime("%m/%d/%Y, %H:%M:%S")
-    task = add_task(conn,('Test',now))
+    task = add_task(conn,'Test')
     (id,name,completed,s_date,e_date) = toggle_task(conn,task)[0]
     assert completed == 1
 
@@ -66,7 +66,7 @@ def test_can_close_connection():
 
 
 """
-TODO: Commands, subtasks?
+TODO: subtasks?
 
 """
 
