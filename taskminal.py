@@ -3,7 +3,7 @@ import sqlite3
 from sqlite3 import Error
 import argparse
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def init_new_database(name:str = "taskminal.db",force:bool = False) -> bool:
     if os.path.isfile(name):
@@ -19,12 +19,20 @@ def init_new_database(name:str = "taskminal.db",force:bool = False) -> bool:
         sql = """ CREATE TABLE IF NOT EXISTS tasks (
                             id integer PRIMARY KEY,
                             name text NOT NULL,
-                            completed integer DEFAULT FALSE,
-                            start_date text NOT NULL,
-                            end_date text);"""
+                            completed integer DEFAULT FALSE);"""
 
         cursor = conn.cursor()
         cursor.execute(sql)
+
+        conn.execute("PRAGMA foreign_keys = 1")
+
+        cursor.execute("""
+                       CREATE TABLE IF NOT EXISTS time(
+                        id integer PRIMARY KEY,
+                        task_id integer,
+                        start_date text,
+                        end_date text,
+                        FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE);""")
 
         print("Database created sucessfully")
     except Error as e:
@@ -40,7 +48,7 @@ def connect_to_db(name):
     conn = None
     try:
         conn = sqlite3.connect(name)
-        #print("Connected.")
+        conn.execute("PRAGMA foreign_keys = 1")
         return conn
     except Error as e:
         print(e)
@@ -48,13 +56,17 @@ def connect_to_db(name):
 
 
 def add_task(conn,task):
-    now = datetime.now()
-    now = now.strftime("%m/%d/%Y, %H:%M:%S")
-    sql = """INSERT INTO tasks(name,start_date,end_date) VALUES(?,?,?)"""
-    cursor = conn.cursor()
-    cursor.execute(sql,(task,now,now))
-    conn.commit()
-    return cursor.lastrowid
+    try:
+        now = datetime.now()
+        now = now.strftime("%m/%d/%Y, %H:%M:%S")
+        sql = """INSERT INTO tasks(name) VALUES(?)"""
+        cursor = conn.cursor()
+        cursor.execute(sql,(task,))
+        conn.commit()
+        id = cursor.lastrowid
+        return id
+    except Error as e:
+        print(e)
 
 def remove_task_by_index(conn,index):
     sql = "DELETE FROM tasks WHERE id=?"
@@ -69,11 +81,38 @@ def toggle_task(conn,id):
     conn.commit()
     return get_task_by_index(conn,id)
 
-def update_task(conn,id):
+def start_task(conn,id):
+    if len(get_task_by_index(conn,id)) == 0:
+        print("Task does not exist.")
+        return
+    sql = "SELECT * from time where task_id=? and end_date is null"
+    cursor = conn.cursor()
+    cursor.execute(sql,(id,))
+    result = cursor.fetchall()
+    if len(result) != 0:
+        print("This task is already open")
+        return
+    sql = "INSERT INTO time(start_date,task_id) VALUES(?,?)"
     now = datetime.now()
     now = now.strftime("%m/%d/%Y, %H:%M:%S")
-    sql = "UPDATE tasks SET end_date = ? WHERE id=?"
+    cursor.execute(sql,(now,id))
+    conn.commit()
+    return get_task_by_index(conn,id)
+
+def stop_task(conn,id):
+    if len(get_task_by_index(conn,id)) == 0:
+        print("Task does not exist.")
+        return
+    sql = "SELECT * from time WHERE task_id=? AND end_date is null"
     cursor = conn.cursor()
+    cursor.execute(sql,(id,))
+    result = cursor.fetchall()
+    if len(result) == 0:
+        print("This task isn't open")
+        return
+    sql = "UPDATE time set end_date = ? where task_id=? and end_date is null"
+    now = datetime.now()
+    now = now.strftime("%m/%d/%Y, %H:%M:%S")
     cursor.execute(sql,(now,id))
     conn.commit()
     return get_task_by_index(conn,id)
@@ -83,6 +122,23 @@ def get_task_by_index(conn,id):
     cursor = conn.cursor()
     cursor.execute(sql,(id,))
     return cursor.fetchall()
+
+def get_time(conn,id):
+    sql = "SELECT * from time WHERE task_id=?"
+    cursor = conn.cursor()
+    cursor.execute(sql,(id,))
+    result = cursor.fetchall()
+    diff = timedelta()
+    if len(result) != 0:
+        for r in result:
+            (_,_,start_date,end_date) = r
+            startTime = datetime.strptime(start_date,"%m/%d/%Y, %H:%M:%S") if start_date else timedelta()
+            endTime = datetime.strptime(end_date,"%m/%d/%Y, %H:%M:%S") if end_date else startTime
+            diff += endTime-startTime
+        return diff
+    else:
+        return "Not started"
+
 
 def get_all_tasks(conn):
     sql = "SELECT * FROM tasks"
@@ -121,8 +177,11 @@ if __name__ == "__main__":
     parser_delete = subparsers.add_parser("delete",aliases=['remove'],help="Removes a task by its index.")
     parser_delete.add_argument("index",help="Index of the task you want to remove.")
 
-    parser_update = subparsers.add_parser("update",help="Sets the current date/time as the last time you worked on this task, but keeps it open.")
-    parser_update.add_argument("index",help="Index of the task you want to update.")
+    parser_start = subparsers.add_parser("start",help="Marks the current date/time as the start point for this session. Call stop when you're done with this task for now.")
+    parser_start.add_argument("index",help="Index of the task you want to update.")
+
+    parser_stop = subparsers.add_parser("stop",help="Stops working on this task.")
+    parser_stop.add_argument("index",help="Task index")
 
     parser_complete = subparsers.add_parser("done",help="Completes the task with the given index.")
     parser_complete.add_argument("index",help="Index of the task.")
@@ -148,27 +207,27 @@ if __name__ == "__main__":
         else:
             print("There's no active database.")
             sys.exit(0)
-        if args.command == "new": #TODO: Add a "notes" table where we can add commentary on each task.
+        if args.command == "new" or args.command == "add": #TODO: Add a "notes" table where we can add commentary on each task.
             add_task(conn,args.title)
         elif args.command == "list":
             tasks = get_all_tasks(conn)
             for t in tasks:
-                (index,name,completed,start,end) = t
+                (index,name,completed) = t
                 if completed == 0 and args.c or completed == 1 and args.u:
                     continue
                 checkmark = "✔" if completed else ""
-                startTime = datetime.strptime(start,"%m/%d/%Y, %H:%M:%S")
-                endTime = datetime.strptime(end,"%m/%d/%Y, %H:%M:%S")
-                print(('[{0}] - {1} [{2}]\nTime spent: {3}').format(index,name,checkmark,endTime-startTime))
+                print(('[{0}] - {1} [{2}]\nTime spent: {3}').format(index,name,checkmark,get_time(conn,index)))
                 print("---------")
         elif args.command == "get":
             print(get_task_by_index(conn,args.index))
-        elif args.command == "delete":
+        elif args.command == "delete" or args.command =="remove":
             remove_task_by_index(conn,args.index)
-        elif args.command == "update":
-            update_task(conn,args.index) #TODO: We could save every time we start and stop a task so we can generate reports and stuff. 
+        elif args.command == "start":
+            start_task(conn,args.index)
+        elif args.command == "stop":
+            stop_task(conn,args.index)
         elif args.command == "done":
-            update_task(conn,args.index)
+            stop_task(conn,args.index)
             toggle_task(conn,args.index)
         close_connection(conn)
 
