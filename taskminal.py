@@ -50,9 +50,9 @@ def connect_to_db(name):
 def add_task(conn,task):
     now = datetime.now()
     now = now.strftime("%m/%d/%Y, %H:%M:%S")
-    sql = """INSERT INTO tasks(name,start_date) VALUES(?,?)"""
+    sql = """INSERT INTO tasks(name,start_date,end_date) VALUES(?,?,?)"""
     cursor = conn.cursor()
-    cursor.execute(sql,(task,now))
+    cursor.execute(sql,(task,now,now))
     conn.commit()
     return cursor.lastrowid
 
@@ -107,17 +107,18 @@ if __name__ == "__main__":
     parser_connect = subparsers.add_parser("set",help="Sets an active database.")
     parser_connect.add_argument("name",help="Name of the database you want to use.")
 
-    parser_add_task = subparsers.add_parser("new",help="Adds a new task")
+    parser_add_task = subparsers.add_parser("new",aliases=["add"],help="Adds a new task")
     parser_add_task.add_argument("title",help="Name of the task")
 
     parser_list = subparsers.add_parser("list",help="Lists all tasks")
-    parser_list.add_argument("-c",action="store_true",help="Show only completed tasks.")
-    parser_list.add_argument("-u",action="store_true",help="Show only unfinished tasks.")
+    group = parser_list.add_mutually_exclusive_group()
+    group.add_argument("-c",action="store_true",help="Show only completed tasks.")
+    group.add_argument("-u",action="store_true",help="Show only unfinished tasks.")
     
     parser_get = subparsers.add_parser("get",help="Gets info for a single task by its index.")
     parser_get.add_argument("index",help="Index of the task you're searching for.")
 
-    parser_delete = subparsers.add_parser("delete",help="Removes a task by its index.")
+    parser_delete = subparsers.add_parser("delete",aliases=['remove'],help="Removes a task by its index.")
     parser_delete.add_argument("index",help="Index of the task you want to remove.")
 
     parser_update = subparsers.add_parser("update",help="Sets the current date/time as the last time you worked on this task, but keeps it open.")
@@ -147,11 +148,19 @@ if __name__ == "__main__":
         else:
             print("There's no active database.")
             sys.exit(0)
-        if args.command == "new":
+        if args.command == "new": #TODO: Add a "notes" table where we can add commentary on each task.
             add_task(conn,args.title)
         elif args.command == "list":
-            print(get_all_tasks(conn)) #TODO: Make this pretty.
-            #TODO: Use the args.
+            tasks = get_all_tasks(conn)
+            for t in tasks:
+                (index,name,completed,start,end) = t
+                if completed == 0 and args.c or completed == 1 and args.u:
+                    continue
+                checkmark = "✔" if completed else ""
+                startTime = datetime.strptime(start,"%m/%d/%Y, %H:%M:%S")
+                endTime = datetime.strptime(end,"%m/%d/%Y, %H:%M:%S")
+                print(('[{0}] - {1} [{2}]\nTime spent: {3}').format(index,name,checkmark,endTime-startTime))
+                print("---------")
         elif args.command == "get":
             print(get_task_by_index(conn,args.index))
         elif args.command == "delete":
