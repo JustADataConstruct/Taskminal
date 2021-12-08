@@ -262,7 +262,7 @@ def main():
     conn = None
 
 
-    args = parser.parse_args()
+    args = parser.parse_args(args=None if sys.argv[1:] else ['--help'])
     if args.command == "createdb":
         init_new_database(args.name,args.f)
     elif args.command == "set":
