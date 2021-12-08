@@ -5,17 +5,18 @@ import argparse
 import sys
 from datetime import datetime, timedelta
 from typing import List, Optional
+from pathlib import Path
 
 def init_new_database(name:str = "taskminal.db",force:bool = False) -> bool:
-    if os.path.isfile(name):
+    if os.path.isfile(Path(__file__).with_name(name)):
         if force == False:
             print("Database already exists!")
             return False
         else:
-            os.remove(name)
+            os.remove(Path(__file__).with_name(name))
     conn = None
     try:
-        conn = sqlite3.connect(name)
+        conn = sqlite3.connect(Path(__file__).with_name(name))
 
         sql = """ CREATE TABLE IF NOT EXISTS tasks (
                             id integer PRIMARY KEY,
@@ -55,7 +56,7 @@ def init_new_database(name:str = "taskminal.db",force:bool = False) -> bool:
 def connect_to_db(name:str) -> Connection:
     conn = None
     try:
-        conn = sqlite3.connect(name)
+        conn = sqlite3.connect(Path(__file__).with_name(name))
         conn.execute("PRAGMA foreign_keys = 1")
         return conn
     except Error as e:
@@ -193,12 +194,25 @@ def delete_comment(conn:Connection,comment_id:int) -> bool:
     print("Comment deleted")
     return True
 
-def close_connection(conn):
+def close_connection(conn:Connection):
     if conn:
-        conn = conn.close()
-    return conn
+        conn.close()
+        return True
+    return False
 
-if __name__ == "__main__":
+def cleanup():
+    print("This will delete all databases, active or otherwise. Do you wish to continue? [y/N]")
+    answer = input().lower()
+    if answer == "n":
+        return
+    if os.path.isfile(Path(__file__).with_name("db.txt")):
+        os.remove(Path(__file__).with_name("db.txt"))
+    dir = Path(__file__).parents[0]
+    files = list(Path(dir).glob('*.db'))
+    for f in files:
+        os.remove(f)
+
+def main():
     parser = argparse.ArgumentParser(prog='taskminal')
     subparsers = parser.add_subparsers(title="Action",help="The action to run.",required=True,dest="command")
 
@@ -243,21 +257,24 @@ if __name__ == "__main__":
     parser_comment_delete = comment_action.add_parser("delete",help="Delete a comment by its unique id.")
     parser_comment_delete.add_argument("comment",help="Index of the comment you want to delete.")
 
+    subparsers.add_parser("cleanup",help="Deletes every database file. Run this before uninstalling.")
+
     conn = None
+
 
     args = parser.parse_args()
     if args.command == "createdb":
         init_new_database(args.name,args.f)
     elif args.command == "set":
-        if os.path.isfile(args.name):
-            with open("db.txt","w") as f:
+        if os.path.isfile(Path(__file__).with_name(args.name)):
+            with open(Path(__file__).with_name("db.txt"),"w") as f:
                 f.write(args.name)
             print("Database selected.")
         else:
             print("Can't find database")
     else:
-        if os.path.isfile("db.txt"):
-            with open('db.txt','r') as f:
+        if os.path.isfile(Path(__file__).with_name("db.txt")):
+            with open(Path(__file__).with_name("db.txt"),'r') as f:
                 conn = connect_to_db(f.read())
         else:
             print("There's no active database.")
@@ -293,5 +310,9 @@ if __name__ == "__main__":
                 add_comment(conn,args.id,args.body)
             elif args.comment_action == "delete":
                 delete_comment(conn,args.comment)
+        elif args.command == "cleanup":
+            cleanup()
         close_connection(conn)
 
+if __name__=="__main__":
+    main()

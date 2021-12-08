@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime
 import os
 
-from taskminal import * 
+from taskminal.taskminal import * 
 
 def test_can_create_a_new_database():
     db_created = init_new_database("test.db",True)
@@ -84,7 +84,7 @@ def test_can_delete_comments():
 def test_can_close_connection():
     conn = connect_to_db("test.db")
     conn = close_connection(conn)
-    assert conn == None
+    assert conn == True
 
 
 
