@@ -34,6 +34,13 @@ def init_new_database(name:str = "taskminal.db",force:bool = False) -> bool:
                         end_date text,
                         FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE);""")
 
+        cursor.execute("""
+                       CREATE TABLE IF NOT EXISTS comments(
+                        id integer PRIMARY KEY,
+                        task_id integer,
+                        body text,
+                        FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE);""")
+
         print("Database created sucessfully")
     except Error as e:
         print(e)
@@ -55,7 +62,7 @@ def connect_to_db(name):
     return conn
 
 
-def add_task(conn,task):
+def add_task(conn,task) -> int:
     try:
         now = datetime.now()
         now = now.strftime("%m/%d/%Y, %H:%M:%S")
@@ -64,15 +71,18 @@ def add_task(conn,task):
         cursor.execute(sql,(task,))
         conn.commit()
         id = cursor.lastrowid
+        print("Task added sucessfully")
         return id
     except Error as e:
         print(e)
+        return -1
 
 def remove_task_by_index(conn,index):
     sql = "DELETE FROM tasks WHERE id=?"
     cursor = conn.cursor()
     cursor.execute(sql,(index,))
     conn.commit()
+    print("Task deleted.")
 
 def toggle_task(conn,id):
     sql = """UPDATE tasks SET completed = CASE WHEN completed = 0 THEN 1 else 0 END WHERE id = ?; """
@@ -97,6 +107,7 @@ def start_task(conn,id):
     now = now.strftime("%m/%d/%Y, %H:%M:%S")
     cursor.execute(sql,(now,id))
     conn.commit()
+    print("This task is now open")
     return get_task_by_index(conn,id)
 
 def stop_task(conn,id):
@@ -115,6 +126,7 @@ def stop_task(conn,id):
     now = now.strftime("%m/%d/%Y, %H:%M:%S")
     cursor.execute(sql,(now,id))
     conn.commit()
+    print("This task is now closed.")
     return get_task_by_index(conn,id)
 
 def get_task_by_index(conn,id):
@@ -146,6 +158,38 @@ def get_all_tasks(conn):
     cursor.execute(sql)
     return cursor.fetchall()
 
+def add_comment(conn,id,comment):
+    if len(get_task_by_index(conn,id)) == 0:
+        print("Task does not exist.")
+        return
+    sql = """INSERT INTO comments(task_id,body) VALUES(?,?)"""
+    cursor = conn.cursor()
+    cursor.execute(sql,(id,comment))
+    conn.commit()
+    id = cursor.lastrowid
+    print("Comment added sucessfully.")
+    return id
+
+def get_comments_by_task_index(conn,id):
+    if len(get_task_by_index(conn,id)) == 0:
+        print("Task does not exist.")
+        return
+    sql = "SELECT * FROM comments WHERE task_id = ?"
+    cursor = conn.cursor()
+    cursor.execute(sql,(id,))
+    return cursor.fetchall()
+
+def delete_comment(conn,task_id,comment_id):
+    if len(get_task_by_index(conn,task_id)) == 0:
+        print("Task does not exist.")
+        return
+    sql = "DELETE FROM COMMENTS WHERE id=? AND task_id=?"
+    cursor = conn.cursor()
+    cursor.execute(sql,(comment_id,task_id,))
+    conn.commit()
+    print("Comment deleted")
+    return True
+
 def close_connection(conn):
     if conn:
         conn = conn.close()
@@ -170,6 +214,7 @@ if __name__ == "__main__":
     group = parser_list.add_mutually_exclusive_group()
     group.add_argument("-c",action="store_true",help="Show only completed tasks.")
     group.add_argument("-u",action="store_true",help="Show only unfinished tasks.")
+    parser_list.add_argument("-nc",action="store_true",help="Don't show comments.")
     
     parser_get = subparsers.add_parser("get",help="Gets info for a single task by its index.")
     parser_get.add_argument("index",help="Index of the task you're searching for.")
@@ -186,7 +231,16 @@ if __name__ == "__main__":
     parser_complete = subparsers.add_parser("done",help="Completes the task with the given index.")
     parser_complete.add_argument("index",help="Index of the task.")
 
-    parser_close = subparsers.add_parser("close",help="Close an active connection.")
+    parser_comment = subparsers.add_parser("comment",help="Adds or removes comments from your tasks.")
+    comment_action = parser_comment.add_subparsers(title="Action",help="Add or remove comments from your tasks.",required=True,dest="comment_action")
+    
+    parser_comment_add = comment_action.add_parser("add",help="Add a new comment to the selected task.")
+    parser_comment_add.add_argument("id",help="ID of the desired task.")
+    parser_comment_add.add_argument("body",help="Text of the comment you want to add.")
+
+    parser_comment_delete = comment_action.add_parser("delete",help="Delete a comment from the selected task.")
+    parser_comment_delete.add_argument("id",help="Index of the desired task.")
+    parser_comment_delete.add_argument("comment",help="Index of the comment you want to delete.")
 
     conn = None
 
@@ -207,7 +261,7 @@ if __name__ == "__main__":
         else:
             print("There's no active database.")
             sys.exit(0)
-        if args.command == "new" or args.command == "add": #TODO: Add a "notes" table where we can add commentary on each task.
+        if args.command == "new" or args.command == "add": 
             add_task(conn,args.title)
         elif args.command == "list":
             tasks = get_all_tasks(conn)
@@ -217,6 +271,10 @@ if __name__ == "__main__":
                     continue
                 checkmark = "✔" if completed else ""
                 print(('[{0}] - {1} [{2}]\nTime spent: {3}').format(index,name,checkmark,get_time(conn,index)))
+                if len(get_comments_by_task_index(conn,index)) > 0 and args.nc == False:
+                    print("Comments:")
+                    for c in get_comments_by_task_index(conn,index):
+                        print(('[{0}] {1}').format(c[0],c[2]))
                 print("---------")
         elif args.command == "get":
             print(get_task_by_index(conn,args.index))
@@ -229,5 +287,10 @@ if __name__ == "__main__":
         elif args.command == "done":
             stop_task(conn,args.index)
             toggle_task(conn,args.index)
+        elif args.command == "comment":
+            if args.comment_action == "add":
+                add_comment(conn,args.id,args.body)
+            elif args.comment_action == "delete":
+                delete_comment(conn,args.id,args.comment)
         close_connection(conn)
 
