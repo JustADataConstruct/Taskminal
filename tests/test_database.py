@@ -77,7 +77,7 @@ def test_can_get_comments():
 def test_can_delete_comments():
     conn = connect_to_db("test.db")
     print(get_comments_by_task_index(conn,1))
-    delete_comment(conn,1,2)
+    delete_comment(conn,2)
     comments = get_comments_by_task_index(conn,1)
     assert len(comments) == 0
 
