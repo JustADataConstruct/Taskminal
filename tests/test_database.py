@@ -29,7 +29,7 @@ def test_can_add_task():
     conn = connect_to_db("test.db")
     result = add_task(conn,'Test')
     print("RESULT:", result)
-    assert result != None
+    assert result != -1
 
 def test_can_get_tasks():
     conn = connect_to_db("test.db")

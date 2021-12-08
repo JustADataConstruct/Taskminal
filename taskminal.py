@@ -1,9 +1,10 @@
 import os
 import sqlite3
-from sqlite3 import Error
+from sqlite3 import Error, Connection
 import argparse
 import sys
 from datetime import datetime, timedelta
+from typing import List, Optional
 
 def init_new_database(name:str = "taskminal.db",force:bool = False) -> bool:
     if os.path.isfile(name):
@@ -51,7 +52,7 @@ def init_new_database(name:str = "taskminal.db",force:bool = False) -> bool:
             conn.close()
         return result
 
-def connect_to_db(name):
+def connect_to_db(name:str) -> Connection:
     conn = None
     try:
         conn = sqlite3.connect(name)
@@ -59,10 +60,10 @@ def connect_to_db(name):
         return conn
     except Error as e:
         print(e)
-    return conn
+        sys.exit(0)
 
 
-def add_task(conn,task) -> int:
+def add_task(conn:Connection,task:str) -> int:
     try:
         now = datetime.now()
         now = now.strftime("%m/%d/%Y, %H:%M:%S")
@@ -77,21 +78,26 @@ def add_task(conn,task) -> int:
         print(e)
         return -1
 
-def remove_task_by_index(conn,index):
-    sql = "DELETE FROM tasks WHERE id=?"
-    cursor = conn.cursor()
-    cursor.execute(sql,(index,))
-    conn.commit()
-    print("Task deleted.")
+def remove_task_by_index(conn:Connection,index:int) -> bool:
+    try:
+        sql = "DELETE FROM tasks WHERE id=?"
+        cursor = conn.cursor()
+        cursor.execute(sql,(index,))
+        conn.commit()
+        print("Task deleted.")
+        return True
+    except Error as e:
+        print(e)
+        return False
 
-def toggle_task(conn,id):
+def toggle_task(conn:Connection,id:int) -> List:
     sql = """UPDATE tasks SET completed = CASE WHEN completed = 0 THEN 1 else 0 END WHERE id = ?; """
     cursor = conn.cursor()
     cursor.execute(sql,(id,))
     conn.commit()
     return get_task_by_index(conn,id)
 
-def start_task(conn,id):
+def start_task(conn:Connection,id:int) -> Optional[List]:
     if len(get_task_by_index(conn,id)) == 0:
         print("Task does not exist.")
         return
@@ -110,7 +116,7 @@ def start_task(conn,id):
     print("This task is now open")
     return get_task_by_index(conn,id)
 
-def stop_task(conn,id):
+def stop_task(conn:Connection,id:int) -> Optional[List]:
     if len(get_task_by_index(conn,id)) == 0:
         print("Task does not exist.")
         return
@@ -129,13 +135,13 @@ def stop_task(conn,id):
     print("This task is now closed.")
     return get_task_by_index(conn,id)
 
-def get_task_by_index(conn,id):
+def get_task_by_index(conn:Connection,id:int) -> List:
     sql = "SELECT * from tasks WHERE id=?"
     cursor = conn.cursor()
     cursor.execute(sql,(id,))
     return cursor.fetchall()
 
-def get_time(conn,id):
+def get_time(conn:Connection,id:int) -> str:
     sql = "SELECT * from time WHERE task_id=?"
     cursor = conn.cursor()
     cursor.execute(sql,(id,))
@@ -147,18 +153,18 @@ def get_time(conn,id):
             startTime = datetime.strptime(start_date,"%m/%d/%Y, %H:%M:%S") if start_date else timedelta()
             endTime = datetime.strptime(end_date,"%m/%d/%Y, %H:%M:%S") if end_date else startTime
             diff += endTime-startTime
-        return diff
+        return str(diff)
     else:
         return "Not started"
 
 
-def get_all_tasks(conn):
+def get_all_tasks(conn:Connection) -> List:
     sql = "SELECT * FROM tasks"
     cursor = conn.cursor()
     cursor.execute(sql)
     return cursor.fetchall()
 
-def add_comment(conn,id,comment):
+def add_comment(conn:Connection,id:int,comment:str) -> Optional[int]:
     if len(get_task_by_index(conn,id)) == 0:
         print("Task does not exist.")
         return
@@ -170,16 +176,16 @@ def add_comment(conn,id,comment):
     print("Comment added sucessfully.")
     return id
 
-def get_comments_by_task_index(conn,id):
+def get_comments_by_task_index(conn:Connection,id:int) -> List:
     if len(get_task_by_index(conn,id)) == 0:
         print("Task does not exist.")
-        return
+        return []
     sql = "SELECT * FROM comments WHERE task_id = ?"
     cursor = conn.cursor()
     cursor.execute(sql,(id,))
     return cursor.fetchall()
 
-def delete_comment(conn,comment_id):
+def delete_comment(conn:Connection,comment_id:int) -> bool:
     sql = "DELETE FROM COMMENTS WHERE id=?"
     cursor = conn.cursor()
     cursor.execute(sql,(comment_id,))
@@ -190,7 +196,6 @@ def delete_comment(conn,comment_id):
 def close_connection(conn):
     if conn:
         conn = conn.close()
-        #print("Connection closed.")
     return conn
 
 if __name__ == "__main__":
