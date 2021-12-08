@@ -179,13 +179,10 @@ def get_comments_by_task_index(conn,id):
     cursor.execute(sql,(id,))
     return cursor.fetchall()
 
-def delete_comment(conn,task_id,comment_id):
-    if len(get_task_by_index(conn,task_id)) == 0:
-        print("Task does not exist.")
-        return
-    sql = "DELETE FROM COMMENTS WHERE id=? AND task_id=?"
+def delete_comment(conn,comment_id):
+    sql = "DELETE FROM COMMENTS WHERE id=?"
     cursor = conn.cursor()
-    cursor.execute(sql,(comment_id,task_id,))
+    cursor.execute(sql,(comment_id,))
     conn.commit()
     print("Comment deleted")
     return True
@@ -238,8 +235,7 @@ if __name__ == "__main__":
     parser_comment_add.add_argument("id",help="ID of the desired task.")
     parser_comment_add.add_argument("body",help="Text of the comment you want to add.")
 
-    parser_comment_delete = comment_action.add_parser("delete",help="Delete a comment from the selected task.")
-    parser_comment_delete.add_argument("id",help="Index of the desired task.")
+    parser_comment_delete = comment_action.add_parser("delete",help="Delete a comment by its unique id.")
     parser_comment_delete.add_argument("comment",help="Index of the comment you want to delete.")
 
     conn = None
@@ -291,6 +287,6 @@ if __name__ == "__main__":
             if args.comment_action == "add":
                 add_comment(conn,args.id,args.body)
             elif args.comment_action == "delete":
-                delete_comment(conn,args.id,args.comment)
+                delete_comment(conn,args.comment)
         close_connection(conn)
 
