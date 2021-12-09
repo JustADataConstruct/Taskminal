@@ -45,6 +45,46 @@ Create your first database and set it as active.
 ```
 
 
+## Running Tests
+
+If you wish to test the code:
+- Install pytest
+```bash
+pip install pytest
+```
+Move into the `taskminal` directory
+```bash
+cd taskminal
+```
+Run pytest
+```bash
+  pytest
+```
+Your output may vary depending on your pytest configuration and flags, but should be something similar to this:
+```bash
+============================= test session starts ==============================
+collecting ... collected 15 items
+
+tests/test_database.py::test_can_create_a_new_database PASSED            [  6%]
+tests/test_database.py::test_can_fail_to_create_if_already_exists PASSED [ 13%]
+tests/test_database.py::test_can_list_databases PASSED                   [ 20%]
+tests/test_database.py::test_can_connect_to_db PASSED                    [ 26%]
+tests/test_database.py::test_can_create_table PASSED                     [ 33%]
+tests/test_database.py::test_can_add_task PASSED                         [ 40%]
+tests/test_database.py::test_can_get_tasks PASSED                        [ 46%]
+tests/test_database.py::test_can_remove_task PASSED                      [ 53%]
+tests/test_database.py::test_can_start_task PASSED                       [ 60%]
+tests/test_database.py::test_can_stop_task PASSED                        [ 66%]
+tests/test_database.py::test_can_complete_task PASSED                    [ 73%]
+tests/test_database.py::test_can_add_comment PASSED                      [ 80%]
+tests/test_database.py::test_can_get_comments PASSED                     [ 86%]
+tests/test_database.py::test_can_delete_comments PASSED                  [ 93%]
+tests/test_database.py::test_can_close_connection PASSED                 [100%]
+
+============================== 15 passed in 0.22s ==============================
+```
+
+
 ## Usage/Examples
 
 Run `taskminal -h` on the command line to see the usage.

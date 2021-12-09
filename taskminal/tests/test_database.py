@@ -101,5 +101,7 @@ TODO: subtasks?
 """
 
 def teardown_module():
-    if os.path.isfile("test.db"):
-        os.remove("test.db")
+    os.remove("test.db")
+    os.remove("db1.db")
+    os.remove("db2.db")
+    os.remove("db3.db")
