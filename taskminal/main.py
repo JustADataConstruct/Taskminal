@@ -6,6 +6,10 @@ import sys
 from datetime import datetime, timedelta
 from typing import List, Optional
 from pathlib import Path
+import webbrowser
+
+from taskminal.report import Report
+
 
 def init_new_database(name:str = "taskminal.db",force:bool = False) -> bool:
     if os.path.isfile(Path(__file__).with_name(name)):
@@ -212,6 +216,39 @@ def cleanup():
     for f in files:
         os.remove(f)
 
+def generate_month_report(conn:Connection):
+    print("Generating report...")
+    dates = []
+    sql = "SELECT * from time WHERE start_date is not null and end_date is not null"
+    cursor = conn.cursor()
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    for _,task_id,start,end in result:
+        startTime = datetime.strptime(start,"%m/%d/%Y, %H:%M:%S")
+        endTime = datetime.strptime(end,"%m/%d/%Y, %H:%M:%S")
+        month = startTime.strftime("%B") if startTime.month == endTime.month else startTime.strftime("%B") + "/" + endTime.strftime("%B")
+        diff = endTime - startTime
+        dates.append((month,task_id,startTime,endTime,diff))
+    dates = sorted(dates,key=lambda month:month[0],reverse=True)
+    months = set([a[0] for a in dates])
+    rep = Report()
+    for m in months:
+        tasks = [a for a in dates if a[0] == m]
+        monthtotal = timedelta()
+        #print(f"[{m.upper()}]")
+        rep.add_month(m.upper())
+        for t in tasks:
+            task = get_task_by_index(conn,t[1])[0]
+            total = t[3] - t[2]
+            monthtotal += total
+            rep.add_task(task[1],t[2],t[3],total)
+            #print(("{0}: {1} -> {2} ({3})").format(task[1],t[2],t[3],total))
+        rep.add_total(monthtotal)
+        #print(monthtotal)
+        rep.close_report()
+        print("Report generated. Opening now.")
+        webbrowser.open('file://' + os.path.realpath('report.html'))
+
 def main():
     parser = argparse.ArgumentParser(prog='taskminal')
     subparsers = parser.add_subparsers(title="Action",help="The action to run.",required=True,dest="command")
@@ -231,9 +268,6 @@ def main():
     group.add_argument("-c",action="store_true",help="Show only completed tasks.")
     group.add_argument("-u",action="store_true",help="Show only unfinished tasks.")
     parser_list.add_argument("-nc",action="store_true",help="Don't show comments.")
-    
-    parser_get = subparsers.add_parser("get",help="Gets info for a single task by its index.")
-    parser_get.add_argument("index",help="Index of the task you're searching for.")
 
     parser_delete = subparsers.add_parser("delete",aliases=['remove'],help="Removes a task by its index.")
     parser_delete.add_argument("index",help="Index of the task you want to remove.")
@@ -258,6 +292,8 @@ def main():
     parser_comment_delete.add_argument("comment",help="Index of the comment you want to delete.")
 
     subparsers.add_parser("cleanup",help="Deletes every database file. Run this before uninstalling.")
+
+    parser_report = subparsers.add_parser("report",help="Generates a monthly time report")
 
     conn = None
 
@@ -294,8 +330,6 @@ def main():
                     for c in get_comments_by_task_index(conn,index):
                         print(('[{0}] {1}').format(c[0],c[2]))
                 print("---------")
-        elif args.command == "get":
-            print(get_task_by_index(conn,args.index))
         elif args.command == "delete" or args.command =="remove":
             remove_task_by_index(conn,args.index)
         elif args.command == "start":
@@ -312,6 +346,8 @@ def main():
                 delete_comment(conn,args.comment)
         elif args.command == "cleanup":
             cleanup()
+        elif args.command == "report":
+            generate_month_report(conn)
         close_connection(conn)
 
 if __name__=="__main__":

@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime
 import os
 
-from taskminal.taskminal import * 
+from taskminal.main import * 
 
 def test_can_create_a_new_database():
     db_created = init_new_database("test.db",True)

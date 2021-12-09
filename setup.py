@@ -7,7 +7,7 @@ setup(name='taskminal',
       author='JustADataConstruct',
       license='MIT',
       entry_points = {
-          'console_scripts':['taskminal=taskminal.taskminal:main']
+          'console_scripts':['taskminal=taskminal.main:main']
       },
-      packages = ['taskminal'],
+      packages = find_packages(),
       zip_safe=False)

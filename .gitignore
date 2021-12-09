@@ -4,3 +4,5 @@ __pycache__
 *.db
 
 taskminal.egg-info
+taskminal/db.txt
+README-WIP.md
