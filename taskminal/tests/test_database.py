@@ -14,6 +14,13 @@ def test_can_fail_to_create_if_already_exists():
     db_created = init_new_database("test.db",False)
     assert db_created == False
 
+def test_can_list_databases():
+    init_new_database("db1.db")
+    init_new_database("db2.db")
+    init_new_database("db3.db")
+    result = list_databases()
+    assert len(result) != 0
+
 def test_can_connect_to_db():
     init_new_database("test.db",True)
     conn = connect_to_db("test.db")

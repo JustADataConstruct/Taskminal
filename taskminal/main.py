@@ -12,6 +12,8 @@ from taskminal.report import Report
 
 
 def init_new_database(name:str = "taskminal.db",force:bool = False) -> bool:
+    if name.endswith(".db") == False:
+        name += ".db"
     if os.path.isfile(Path(__file__).with_name(name)):
         if force == False:
             print("Database already exists!")
@@ -67,6 +69,18 @@ def connect_to_db(name:str) -> Connection:
         print(e)
         sys.exit(0)
 
+def list_databases() -> List:
+    cur = ""
+    if os.path.isfile(Path(__file__).with_name("db.txt")):
+        with open(Path(__file__).with_name("db.txt"),'r') as f:
+            cur = f.read()
+    dir = Path(__file__).parents[0]
+    files = list(Path(dir).glob('*.db'))
+    if cur != "":
+        print(f"Active: {cur}")
+    for f in files:
+        print(f)
+    return files
 
 def add_task(conn:Connection,task:str) -> int:
     try:
@@ -260,6 +274,8 @@ def main():
     parser_connect = subparsers.add_parser("set",help="Sets an active database.")
     parser_connect.add_argument("name",help="Name of the database you want to use.")
 
+    parser_listdb = subparsers.add_parser("listdb",help="Shows all created databases")
+
     parser_add_task = subparsers.add_parser("new",aliases=["add"],help="Adds a new task")
     parser_add_task.add_argument("title",help="Name of the task")
 
@@ -301,13 +317,19 @@ def main():
     args = parser.parse_args(args=None if sys.argv[1:] else ['--help'])
     if args.command == "createdb":
         init_new_database(args.name,args.f)
+    elif args.command == "listdb":
+        list_databases()
     elif args.command == "set":
+        if args.name.endswith(".db") == False:
+            args.name += ".db"
         if os.path.isfile(Path(__file__).with_name(args.name)):
             with open(Path(__file__).with_name("db.txt"),"w") as f:
                 f.write(args.name)
             print("Database selected.")
         else:
             print("Can't find database")
+    elif args.command == "cleanup":
+        cleanup()
     else:
         if os.path.isfile(Path(__file__).with_name("db.txt")):
             with open(Path(__file__).with_name("db.txt"),'r') as f:
@@ -344,8 +366,6 @@ def main():
                 add_comment(conn,args.id,args.body)
             elif args.comment_action == "delete":
                 delete_comment(conn,args.comment)
-        elif args.command == "cleanup":
-            cleanup()
         elif args.command == "report":
             generate_month_report(conn)
         close_connection(conn)
