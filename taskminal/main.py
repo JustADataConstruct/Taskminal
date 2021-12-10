@@ -251,16 +251,13 @@ def generate_month_report(conn:Connection):
     for m in sorted(months,key=month_lookup.index):
         tasks = [a for a in dates if a[0] == m]
         monthtotal = timedelta()
-        #print(f"[{m.upper()}]")
         rep.add_month(m.upper())
         for t in tasks:
             task = get_task_by_index(conn,t[1])[0]
             total = t[3] - t[2]
             monthtotal += total
             rep.add_task(task[1],t[2],t[3],total)
-            #print(("{0}: {1} -> {2} ({3})").format(task[1],t[2],t[3],total))
         rep.add_total(monthtotal)
-        #print(monthtotal)
         rep.close_report()
     print("Report generated. Opening now.")
     webbrowser.open('file://' + os.path.realpath('report.html'))
