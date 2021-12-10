@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 from pathlib import Path
 import webbrowser
+from calendar import month_name
 
 from taskminal.report import Report
 
@@ -240,13 +241,14 @@ def generate_month_report(conn:Connection):
     for _,task_id,start,end in result:
         startTime = datetime.strptime(start,"%m/%d/%Y, %H:%M:%S")
         endTime = datetime.strptime(end,"%m/%d/%Y, %H:%M:%S")
-        month = startTime.strftime("%B") if startTime.month == endTime.month else startTime.strftime("%B") + "/" + endTime.strftime("%B")
+        month = startTime.strftime("%B") 
         diff = endTime - startTime
         dates.append((month,task_id,startTime,endTime,diff))
     dates = sorted(dates,key=lambda month:month[0],reverse=True)
     months = set([a[0] for a in dates])
     rep = Report()
-    for m in months:
+    month_lookup = list(month_name)
+    for m in sorted(months,key=month_lookup.index):
         tasks = [a for a in dates if a[0] == m]
         monthtotal = timedelta()
         #print(f"[{m.upper()}]")
@@ -260,8 +262,8 @@ def generate_month_report(conn:Connection):
         rep.add_total(monthtotal)
         #print(monthtotal)
         rep.close_report()
-        print("Report generated. Opening now.")
-        webbrowser.open('file://' + os.path.realpath('report.html'))
+    print("Report generated. Opening now.")
+    webbrowser.open('file://' + os.path.realpath('report.html'))
 
 def main():
     parser = argparse.ArgumentParser(prog='taskminal')

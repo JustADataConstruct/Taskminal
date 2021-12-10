@@ -1,7 +1,7 @@
 from setuptools import setup,find_packages
 
 setup(name='taskminal',
-      version='0.1',
+      version='0.5',
       description='A CLI tasklist / time tracker.',
       url='https://github.com/JustADataConstruct/Taskminal',
       author='JustADataConstruct',
