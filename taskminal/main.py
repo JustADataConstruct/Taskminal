@@ -277,6 +277,7 @@ def main():
 
     parser_add_task = subparsers.add_parser("new",aliases=["add"],help="Adds a new task")
     parser_add_task.add_argument("title",help="Name of the task")
+    parser_add_task.add_argument("-s",action="store_true",help="Automatically start the task after adding it.")
 
     parser_list = subparsers.add_parser("list",help="Lists all tasks")
     group = parser_list.add_mutually_exclusive_group()
@@ -337,7 +338,9 @@ def main():
             print("There's no active database.")
             sys.exit(0)
         if args.command == "new" or args.command == "add": 
-            add_task(conn,args.title)
+            id = add_task(conn,args.title)
+            if args.s:
+                start_task(conn,id)
         elif args.command == "list":
             tasks = get_all_tasks(conn)
             for t in tasks:

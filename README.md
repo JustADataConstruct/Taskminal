@@ -17,6 +17,8 @@
 - SQLite 3.36.0
 
 
+
+
 ## Installation
 
 Clone the project
@@ -141,9 +143,11 @@ taskminal listdb
 This command will print a list of any databases created, active or not.
 ## Add a new Task
 ```zsh
-taskminal (new,add) {TASKNAME}
+taskminal (new,add) {TASKNAME} [-s]
 ```
 Adds a new Task to your database, with the indicated name.
+
+You can use the `-s` flag to auto-start the task. Otherwise you'll need to call the `start` command (see below)
 
 ## List Tasks
 ```zsh
