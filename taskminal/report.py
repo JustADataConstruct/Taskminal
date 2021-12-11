@@ -17,7 +17,7 @@ class Report:
     def add_task(self,task_name:str,task_start:datetime,task_end:datetime,task_total:int):
         start = f"{task_start.month}-{task_start.day}-{task_start.year}, {task_start.hour}:{task_start.minute}:{task_start.second}"
         end = f"{task_end.month}-{task_end.day}-{task_end.year}, {task_end.hour}:{task_end.minute}:{task_end.second}"
-        self.report += f"<b>{task_name}</b><br> {start} -> {end} <b>({task_total})</b><br>"
+        self.report += f"<p><b>{task_name}</b><br> {start} -> {end} <b>({task_total})</b></p>"
 
     def add_total(self,task_total):
         self.report += f"<br>Total time: <b>{task_total}</b>"

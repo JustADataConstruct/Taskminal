@@ -32,7 +32,6 @@ def init_new_database(name:str = "taskminal.db",force:bool = False) -> bool:
 
         cursor = conn.cursor()
         cursor.execute(sql)
-
         conn.execute("PRAGMA foreign_keys = 1")
 
         cursor.execute("""
