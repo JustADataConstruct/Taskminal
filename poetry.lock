@@ -107,10 +107,18 @@ category = "dev"
 optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
+[[package]]
+name = "vermin"
+version = "1.3.1"
+description = "Concurrently detect the minimum Python versions needed to run code"
+category = "dev"
+optional = false
+python-versions = ">=2.7"
+
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "50f3a70df6955ad39aad92ed570d7c5ee065c099dc6b985df8084065e84fab72"
+content-hash = "d4007bf193299fdf7f472e9029b77fcf05d31540d0ca013755b672fb6d3e8611"
 
 [metadata.files]
 atomicwrites = [
@@ -152,4 +160,7 @@ pytest = [
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
     {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},
+]
+vermin = [
+    {file = "vermin-1.3.1-py2.py3-none-any.whl", hash = "sha256:ef38dedab8cf7b68f8037f531b82222153ab21d3c54b91dd80776bbf95637ae5"},
 ]
