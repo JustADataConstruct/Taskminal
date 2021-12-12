@@ -5,6 +5,28 @@
 2) A CLI to-do list manager / time manager.
 3) Seriously I'm so sorry about the name.
 
+- [Features](#features)
+- [Made with](#made-with)
+- [Requeriments](#requeriments)
+- [Installation](#installation)
+- [Running Tests](#running-tests)
+- [Usage](#usage)
+  - [Create a Database](#create-a-database)
+  - [Set a Database as Active](#set-a-database-as-active)
+  - [List all Databases](#list-all-databases)
+  - [Add a new Task](#add-a-new-task)
+  - [List Tasks](#list-tasks)
+  - [Delete Tasks](#delete-tasks)
+  - [Logging Time](#logging-time)
+  - [Complete a Task](#complete-a-task)
+  - [Add Comments](#add-comments)
+  - [Delete Comments](#delete-comments)
+  - [Cleanup and Uninstall](#cleanup-and-uninstall)
+  - [Report](#report)
+- [Roadmap](#roadmap)
+- [License](#license)
+
+
 ## Features
 
 - Fully controllable with the keyboard, making it comfortable to use while writing or coding.
@@ -16,7 +38,8 @@
 - Python 3.9.7
 - SQLite 3.36.0
 
-
+## Requeriments
+- Python 3.7 or higher.
 
 
 ## Installation
@@ -87,7 +110,7 @@ tests/test_database.py::test_can_close_connection PASSED                 [100%]
 ```
 
 
-## Usage/Examples
+## Usage
 
 Run `taskminal -h` on the command line to see the usage.
 
@@ -208,7 +231,7 @@ taskminal comment delete {COMMENT_INDEX}
 Deletes the comment identified by its index, as seen on `list`'s output.
 
 Please notice that this command requires **the comment's ID**, indepently of to what Task it is attached.
-## Cleanup / Uninstall
+## Cleanup and Uninstall
 ```zsh
 taskminal cleanup
 ```
