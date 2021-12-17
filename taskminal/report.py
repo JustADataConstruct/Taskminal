@@ -1,4 +1,3 @@
-
 from datetime import datetime
 
 
@@ -11,22 +10,20 @@ class Report:
         </head>
         <body>"""
 
-    def add_month(self,month_name:str):
+    def add_month(self, month_name: str):
         self.report += f"<h2>{month_name}</h2><br>"
 
-    def add_task(self,task_name:str,task_start:datetime,task_end:datetime,task_total:int):
-        start = f"{task_start.month}-{task_start.day}-{task_start.year}, {task_start.hour}:{task_start.minute}:{task_start.second}"
-        end = f"{task_end.month}-{task_end.day}-{task_end.year}, {task_end.hour}:{task_end.minute}:{task_end.second}"
+    def add_task(self, task_name: str, task_start: datetime, task_end: datetime, task_total: int):
+        start = f"{task_start.month}-{task_start.day}-{task_start.year}, {task_start.hour:02}:{task_start.minute:02}:{task_start.second:02}"
+        end = f"{task_end.month}-{task_end.day}-{task_end.year}, {task_end.hour:02}:{task_end.minute:02}:{task_end.second:02}"
         self.report += f"<p><b>{task_name}</b><br> {start} -> {end} <b>({task_total})</b></p>"
 
-    def add_total(self,task_total):
+    def add_total(self, task_total):
         self.report += f"<br>Total time: <b>{task_total}</b>"
 
     def close_report(self):
         self.report += """</body>
                      </html>
         """
-        with open("report.html","w") as f:
+        with open("report.html", "w") as f:
             f.write(self.report)
-    
-
