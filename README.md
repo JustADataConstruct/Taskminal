@@ -247,7 +247,7 @@ taskminal report
 ```
 This command will generate a simple HTML report showing how much time you allocated per month to each task.
 
-Please notice that unless most commands, this command will generate a html file on your current working directory and not on Taskminal's install folder.
+Please notice that unlike most commands, this command will generate a html file on your current working directory and not on Taskminal's install folder.
 ## Roadmap
 
 - Better HTML reports.
