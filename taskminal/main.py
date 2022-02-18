@@ -13,6 +13,13 @@ from taskminal.report import Report
 
 
 def init_new_database(name: str = "taskminal.db", force: bool = False) -> bool:
+    """
+    Will try to create a new database with the indicated name. If force is true, will overwrite any existing database with that name.
+
+    :param name str: Name of the new database. If it doesn't have the ".db" extension, it will be appended.
+    :param force bool: Overwrite existing database with the same name?
+    :rtype bool: True if the database has been created correctly, False otherwise.
+    """
     if name.endswith(".db") is False:
         name += ".db"
     if os.path.isfile(Path(__file__).with_name(name)):
@@ -61,6 +68,12 @@ def init_new_database(name: str = "taskminal.db", force: bool = False) -> bool:
 
 
 def connect_to_db(name: str) -> Connection:
+    """
+    Tries to connect with the indicated database. Finishes execution if it can't connect.
+
+    :param name str: Filename of the desired database. Expects an sqlite3 file.
+    :rtype Connection: A functional sqlite3 connection, if the database connected.
+    """
     conn = None
     try:
         conn = sqlite3.connect(Path(__file__).with_name(name))
@@ -68,10 +81,15 @@ def connect_to_db(name: str) -> Connection:
         return conn
     except Error as e:
         print(e)
-        sys.exit(0)
+        sys.exit(1)
 
 
 def list_databases() -> List:
+    """
+    Returns a list of every .db file in the same folder as the program.
+
+    :rtype List: List of the filename of each .db file in the main folder, as strings.
+    """
     cur = ""
     if os.path.isfile(Path(__file__).with_name("db.txt")):
         with open(Path(__file__).with_name("db.txt"), 'r') as f:
@@ -86,6 +104,13 @@ def list_databases() -> List:
 
 
 def add_task(conn: Connection, task: str) -> int:
+    """
+    Adds a new task to the database, with the indicated name and the current date and time. Returns id of the task if created.
+
+    :param conn Connection: Current sqlite3 connection.
+    :param task str: Name/title of the current task.
+    :rtype int: ID of the new task if it has been created sucessfully, -1 otherwise.
+    """
     try:
         now = datetime.now()
         now = now.strftime("%m/%d/%Y, %H:%M:%S")
@@ -102,6 +127,13 @@ def add_task(conn: Connection, task: str) -> int:
 
 
 def remove_task_by_index(conn: Connection, index: int) -> bool:
+    """
+    Removes task with the indicated index if it exists on the current database.
+
+    :param conn Connection: Current sqlite3 connection.
+    :param index int: ID of the task to delete.
+    :rtype bool: True if correctly deleted, False otherwise.
+    """
     try:
         sql = "DELETE FROM tasks WHERE id=?"
         cursor = conn.cursor()
@@ -114,7 +146,15 @@ def remove_task_by_index(conn: Connection, index: int) -> bool:
         return False
 
 
+# FIXME: Should return just a single task.
 def toggle_task(conn: Connection, id: int) -> List:
+    """
+    If the selected task is marked as completed, sets its as not completed and viceversa.
+
+    :param conn Connection: Current sqlite3 connection.
+    :param id int: Index of the task to toggle.
+    :rtype List: List of tasks with the selected ID. FIXME: Should return just the single task.
+    """
     sql = """UPDATE tasks SET completed = CASE WHEN completed = 0 THEN 1 else 0 END WHERE id = ?; """
     cursor = conn.cursor()
     cursor.execute(sql, (id,))
@@ -122,7 +162,16 @@ def toggle_task(conn: Connection, id: int) -> List:
     return get_task_by_index(conn, id)
 
 
+# FIXME: Should return a single task with the id.
+# FIXME: Change Optional[List] to List | None
 def start_task(conn: Connection, id: int) -> Optional[List]:
+    """
+    Marks the starttime of the selected task as the current datetime, unless it's already not null.
+
+    :param conn Connection: Current sqlite3 connection.
+    :param id int: ID of the selected task.
+    :rtype Optional[List]: List of tasks with the selected index, or None if the task was already started.
+    """
     if len(get_task_by_index(conn, id)) == 0:
         print("Task does not exist.")
         return
@@ -142,6 +191,7 @@ def start_task(conn: Connection, id: int) -> Optional[List]:
     return get_task_by_index(conn, id)
 
 
+# FIXME: Change Optional[List] to List | None
 def stop_task(conn: Connection, id: int) -> Optional[List]:
     if len(get_task_by_index(conn, id)) == 0:
         print("Task does not exist.")
@@ -162,7 +212,15 @@ def stop_task(conn: Connection, id: int) -> Optional[List]:
     return get_task_by_index(conn, id)
 
 
+# FIXME: Should return just a single task, no two tasks have the same ID.
 def get_task_by_index(conn: Connection, id: int) -> List:
+    """
+    Returns list of tasks with the selected index.
+
+    :param conn Connection: Current sqlite3 connection.
+    :param id int: ID of the task to find.
+    :rtype List: List of tasks with the selected index.
+    """
     sql = "SELECT * from tasks WHERE id=?"
     cursor = conn.cursor()
     cursor.execute(sql, (id,))
@@ -170,6 +228,13 @@ def get_task_by_index(conn: Connection, id: int) -> List:
 
 
 def get_time(conn: Connection, id: int) -> str:
+    """
+    Returns total time spent on a task, if it has been started and stopped at least once.
+
+    :param conn Connection: Current sqlite3 connection.
+    :param id int: ID of the chosen task.
+    :rtype str: Total time spent as a string formatted as H:MM:SS, or Not Started.
+    """
     sql = "SELECT * from time WHERE task_id=?"
     cursor = conn.cursor()
     cursor.execute(sql, (id,))
@@ -187,6 +252,12 @@ def get_time(conn: Connection, id: int) -> str:
 
 
 def get_all_tasks(conn: Connection) -> List:
+    """
+    Returns list of all tasks.
+
+    :param conn Connection: Current sqlite3 connection
+    :rtype List: List of all tasks in the current database.
+    """
     sql = "SELECT * FROM tasks"
     cursor = conn.cursor()
     cursor.execute(sql)
@@ -194,6 +265,14 @@ def get_all_tasks(conn: Connection) -> List:
 
 
 def add_comment(conn: Connection, id: int, comment: str) -> Optional[int]:
+    """
+    Adds a comment to the chosen task, if it exists.
+
+    :param conn Connection: Current sqlite3 connection.
+    :param id int: ID of the chosen task.
+    :param comment str: Content of the comment you want to add.
+    :rtype Optional[int]: id of the created comment, or None if task doesn't exist.
+    """
     if len(get_task_by_index(conn, id)) == 0:
         print("Task does not exist.")
         return
@@ -207,6 +286,13 @@ def add_comment(conn: Connection, id: int, comment: str) -> Optional[int]:
 
 
 def get_comments_by_task_index(conn: Connection, id: int) -> List:
+    """
+    Returns all comments of a single task.
+
+    :param conn Connection: Current sqlite3 connection.
+    :param id int: ID of the chosen task.
+    :rtype List: List of all comments from the chosen task.
+    """
     if len(get_task_by_index(conn, id)) == 0:
         print("Task does not exist.")
         return []
@@ -216,7 +302,15 @@ def get_comments_by_task_index(conn: Connection, id: int) -> List:
     return cursor.fetchall()
 
 
+# FIXME: Do error handling.
 def delete_comment(conn: Connection, comment_id: int) -> bool:
+    """
+    Deletes comment with the chosen comment id.
+
+    :param conn Connection: Current sqlite3 connection.
+    :param comment_id int: ID of the chosen comment
+    :rtype bool: True if the comment has been deleted.
+    """
     sql = "DELETE FROM COMMENTS WHERE id=?"
     cursor = conn.cursor()
     cursor.execute(sql, (comment_id,))
@@ -226,6 +320,11 @@ def delete_comment(conn: Connection, comment_id: int) -> bool:
 
 
 def close_connection(conn: Connection):
+    """
+    Closes current connection.
+
+    :param conn Connection: Connection to close.
+    """
     if conn:
         conn.close()
         return True
@@ -233,6 +332,10 @@ def close_connection(conn: Connection):
 
 
 def cleanup():
+    """
+    Deletes all .db files on the main folder, plus the db.txt file if it exists.
+
+    """
     print("This will delete all databases, active or otherwise. Do you wish to continue? [y/N]")
     answer = input().lower()
     if answer == "n":
@@ -245,7 +348,13 @@ def cleanup():
         os.remove(f)
 
 
+# TODO: Rewrite this with Jinja2.
 def generate_month_report(conn: Connection):
+    """
+    Deprecated: Will be rewritten.
+
+    :param conn Connection: [TODO:description]
+    """
     print("Generating report...")
     dates = []
     sql = "SELECT * from time WHERE start_date is not null and end_date is not null"
