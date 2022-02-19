@@ -4,7 +4,7 @@ from sqlite3 import Error, Connection
 import argparse
 import sys
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List, Tuple
 from pathlib import Path
 import webbrowser
 from calendar import month_name
@@ -146,14 +146,13 @@ def remove_task_by_index(conn: Connection, index: int) -> bool:
         return False
 
 
-# FIXME: Should return just a single task.
-def toggle_task(conn: Connection, id: int) -> List:
+def toggle_task(conn: Connection, id: int) -> Tuple[int, str, int]:
     """
     If the selected task is marked as completed, sets its as not completed and viceversa.
 
     :param conn Connection: Current sqlite3 connection.
     :param id int: Index of the task to toggle.
-    :rtype List: List of tasks with the selected ID. FIXME: Should return just the single task.
+    :rtype Tuple[int, str, int]: Task with the selected ID.
     """
     sql = """UPDATE tasks SET completed = CASE WHEN completed = 0 THEN 1 else 0 END WHERE id = ?; """
     cursor = conn.cursor()
@@ -162,15 +161,13 @@ def toggle_task(conn: Connection, id: int) -> List:
     return get_task_by_index(conn, id)
 
 
-# FIXME: Should return a single task with the id.
-# FIXME: Change Optional[List] to List | None
-def start_task(conn: Connection, id: int) -> Optional[List]:
+def start_task(conn: Connection, id: int) -> Tuple[int, str, int] | None:
     """
     Marks the starttime of the selected task as the current datetime, unless it's already not null.
 
     :param conn Connection: Current sqlite3 connection.
     :param id int: ID of the selected task.
-    :rtype Optional[List]: List of tasks with the selected index, or None if the task was already started.
+    :rtype Tuple[int,str,int] | None: Task with the selected index, or None if the task was already started.
     """
     if len(get_task_by_index(conn, id)) == 0:
         print("Task does not exist.")
@@ -191,8 +188,7 @@ def start_task(conn: Connection, id: int) -> Optional[List]:
     return get_task_by_index(conn, id)
 
 
-# FIXME: Change Optional[List] to List | None
-def stop_task(conn: Connection, id: int) -> Optional[List]:
+def stop_task(conn: Connection, id: int) -> Tuple[int, str, int] | None:
     if len(get_task_by_index(conn, id)) == 0:
         print("Task does not exist.")
         return
@@ -212,19 +208,19 @@ def stop_task(conn: Connection, id: int) -> Optional[List]:
     return get_task_by_index(conn, id)
 
 
-# FIXME: Should return just a single task, no two tasks have the same ID.
-def get_task_by_index(conn: Connection, id: int) -> List:
+def get_task_by_index(conn: Connection, id: int) -> Tuple[int, str, int]:
     """
-    Returns list of tasks with the selected index.
+    Returns task with the selected index.
 
     :param conn Connection: Current sqlite3 connection.
     :param id int: ID of the task to find.
-    :rtype List: List of tasks with the selected index.
+    :rtype Tuple[int,str,int]: Task with the selected index with the format (id,name,completed).
     """
     sql = "SELECT * from tasks WHERE id=?"
     cursor = conn.cursor()
     cursor.execute(sql, (id,))
-    return cursor.fetchall()
+    tsk = cursor.fetchone()
+    return tsk
 
 
 def get_time(conn: Connection, id: int) -> str:
@@ -264,14 +260,14 @@ def get_all_tasks(conn: Connection) -> List:
     return cursor.fetchall()
 
 
-def add_comment(conn: Connection, id: int, comment: str) -> Optional[int]:
+def add_comment(conn: Connection, id: int, comment: str) -> int | None:
     """
     Adds a comment to the chosen task, if it exists.
 
     :param conn Connection: Current sqlite3 connection.
     :param id int: ID of the chosen task.
     :param comment str: Content of the comment you want to add.
-    :rtype Optional[int]: id of the created comment, or None if task doesn't exist.
+    :rtype int | None: id of the created comment, or None if task doesn't exist.
     """
     if len(get_task_by_index(conn, id)) == 0:
         print("Task does not exist.")
@@ -302,21 +298,24 @@ def get_comments_by_task_index(conn: Connection, id: int) -> List:
     return cursor.fetchall()
 
 
-# FIXME: Do error handling.
 def delete_comment(conn: Connection, comment_id: int) -> bool:
     """
     Deletes comment with the chosen comment id.
 
     :param conn Connection: Current sqlite3 connection.
     :param comment_id int: ID of the chosen comment
-    :rtype bool: True if the comment has been deleted.
+    :rtype bool: True if the comment has been deleted, False otherwise.
     """
-    sql = "DELETE FROM COMMENTS WHERE id=?"
-    cursor = conn.cursor()
-    cursor.execute(sql, (comment_id,))
-    conn.commit()
-    print("Comment deleted")
-    return True
+    try:
+        sql = "DELETE FROM COMMENTS WHERE id=?"
+        cursor = conn.cursor()
+        cursor.execute(sql, (comment_id,))
+        conn.commit()
+        print("Comment deleted")
+        return True
+    except Exception as e:
+        print(f"Something went wrong while deleting the comment: {e}")
+        return False
 
 
 def close_connection(conn: Connection):
@@ -491,7 +490,9 @@ def main():
             elif args.comment_action == "delete":
                 delete_comment(conn, args.comment)
         elif args.command == "report":
-            generate_month_report(conn)
+            # FIXME: Deprecated, rewrite.
+            print("Currently disabled.")
+            # generate_month_report(conn)
         close_connection(conn)
 
 
