@@ -21,6 +21,7 @@ python = "^3.7"
 pytest = "^6.2.5"
 vermin = "^1.3.1"
 flake8 = "^4.0.1"
+autopep8 = "^1.6.0"
 
 [tool.poetry.scripts]
 taskminal='taskminal.main:main'

@@ -239,8 +239,10 @@ def get_time(conn: Connection, id: int) -> str:
     if len(result) != 0:
         for r in result:
             (_, _, start_date, end_date) = r
-            startTime = datetime.strptime(start_date, "%m/%d/%Y, %H:%M:%S") if start_date else timedelta()
-            endTime = datetime.strptime(end_date, "%m/%d/%Y, %H:%M:%S") if end_date else startTime
+            startTime = datetime.strptime(
+                start_date, "%m/%d/%Y, %H:%M:%S") if start_date else timedelta()
+            endTime = datetime.strptime(
+                end_date, "%m/%d/%Y, %H:%M:%S") if end_date else startTime
             diff += endTime-startTime
         return str(diff)
     else:
@@ -335,7 +337,8 @@ def cleanup():
     Deletes all .db files on the main folder, plus the db.txt file if it exists.
 
     """
-    print("This will delete all databases, active or otherwise. Do you wish to continue? [y/N]")
+    print(
+        "This will delete all databases, active or otherwise. Do you wish to continue? [y/N]")
     answer = input().lower()
     if answer == "n":
         return
@@ -387,49 +390,72 @@ def generate_month_report(conn: Connection):
 
 def main():
     parser = argparse.ArgumentParser(prog='taskminal')
-    subparsers = parser.add_subparsers(title="Action", help="The action to run.", required=True, dest="command")
+    subparsers = parser.add_subparsers(
+        title="Action", help="The action to run.", required=True, dest="command")
 
-    parser_create = subparsers.add_parser("createdb", help="Create a new database")
+    parser_create = subparsers.add_parser(
+        "createdb", help="Create a new database")
     parser_create.add_argument("name", help="Name of the new database.")
-    parser_create.add_argument("-f", action="store_true", help="Force the creation of this database even if it already exists.")
+    parser_create.add_argument(
+        "-f", action="store_true", help="Force the creation of this database even if it already exists.")
 
-    parser_connect = subparsers.add_parser("set", help="Sets an active database.")
-    parser_connect.add_argument("name", help="Name of the database you want to use.")
+    parser_connect = subparsers.add_parser(
+        "set", help="Sets an active database.")
+    parser_connect.add_argument(
+        "name", help="Name of the database you want to use.")
 
     subparsers.add_parser("listdb", help="Shows all created databases")
 
-    parser_add_task = subparsers.add_parser("new", aliases=["add"], help="Adds a new task")
+    parser_add_task = subparsers.add_parser(
+        "new", aliases=["add"], help="Adds a new task")
     parser_add_task.add_argument("title", help="Name of the task")
-    parser_add_task.add_argument("-s", action="store_true", help="Automatically start the task after adding it.")
+    parser_add_task.add_argument(
+        "-s", action="store_true", help="Automatically start the task after adding it.")
 
     parser_list = subparsers.add_parser("list", help="Lists all tasks")
     group = parser_list.add_mutually_exclusive_group()
-    group.add_argument("-c", action="store_true", help="Show only completed tasks.")
-    group.add_argument("-u", action="store_true", help="Show only unfinished tasks.")
-    parser_list.add_argument("-nc", action="store_true", help="Don't show comments.")
+    group.add_argument("-c", action="store_true",
+                       help="Show only completed tasks.")
+    group.add_argument("-u", action="store_true",
+                       help="Show only unfinished tasks.")
+    parser_list.add_argument("-nc", action="store_true",
+                             help="Don't show comments.")
 
-    parser_delete = subparsers.add_parser("delete", aliases=['remove'], help="Removes a task by its index.")
-    parser_delete.add_argument("index", help="Index of the task you want to remove.")
+    parser_delete = subparsers.add_parser(
+        "delete", aliases=['remove'], help="Removes a task by its index.")
+    parser_delete.add_argument(
+        "index", help="Index of the task you want to remove.")
 
-    parser_start = subparsers.add_parser("start", help="Marks the current date/time as the start point for this session. Call stop when you're done with this task for now.")
-    parser_start.add_argument("index", help="Index of the task you want to update.")
+    parser_start = subparsers.add_parser(
+        "start", help="Marks the current date/time as the start point for this session. Call stop when you're done with this task for now.")
+    parser_start.add_argument(
+        "index", help="Index of the task you want to update.")
 
-    parser_stop = subparsers.add_parser("stop", help="Stops working on this task.")
+    parser_stop = subparsers.add_parser(
+        "stop", help="Stops working on this task.")
     parser_stop.add_argument("index", help="Task index")
 
-    parser_complete = subparsers.add_parser("done", help="Completes the task with the given index.")
+    parser_complete = subparsers.add_parser(
+        "done", help="Completes the task with the given index.")
     parser_complete.add_argument("index", help="Index of the task.")
 
-    parser_comment = subparsers.add_parser("comment", help="Adds or removes comments from your tasks.")
-    comment_action = parser_comment.add_subparsers(title="Action", help="Add or remove comments from your tasks.", required=True, dest="comment_action")
-    parser_comment_add = comment_action.add_parser("add", help="Add a new comment to the selected task.")
+    parser_comment = subparsers.add_parser(
+        "comment", help="Adds or removes comments from your tasks.")
+    comment_action = parser_comment.add_subparsers(
+        title="Action", help="Add or remove comments from your tasks.", required=True, dest="comment_action")
+    parser_comment_add = comment_action.add_parser(
+        "add", help="Add a new comment to the selected task.")
     parser_comment_add.add_argument("id", help="ID of the desired task.")
-    parser_comment_add.add_argument("body", help="Text of the comment you want to add.")
+    parser_comment_add.add_argument(
+        "body", help="Text of the comment you want to add.")
 
-    parser_comment_delete = comment_action.add_parser("delete", help="Delete a comment by its unique id.")
-    parser_comment_delete.add_argument("comment", help="Index of the comment you want to delete.")
+    parser_comment_delete = comment_action.add_parser(
+        "delete", help="Delete a comment by its unique id.")
+    parser_comment_delete.add_argument(
+        "comment", help="Index of the comment you want to delete.")
 
-    subparsers.add_parser("cleanup", help="Deletes every database file. Run this before uninstalling.")
+    subparsers.add_parser(
+        "cleanup", help="Deletes every database file. Run this before uninstalling.")
 
     subparsers.add_parser("report", help="Generates a monthly time report")
 
@@ -469,7 +495,8 @@ def main():
                 if completed == 0 and args.c or completed == 1 and args.u:
                     continue
                 checkmark = "✔" if completed else ""
-                print(('[{0}] - {1} [{2}]\nTime spent: {3}').format(index, name, checkmark, get_time(conn, index)))
+                print(('[{0}] - {1} [{2}]\nTime spent: {3}').format(index,
+                      name, checkmark, get_time(conn, index)))
                 if len(get_comments_by_task_index(conn, index)) > 0 and args.nc is False:
                     print("Comments:")
                     for c in get_comments_by_task_index(conn, index):
